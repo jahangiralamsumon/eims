@@ -297,10 +297,29 @@ class SiteController extends Controller
 
  
 	public function actionMarksUpdate($mark_id){
+		
+		$sub_details_arr= explode(",",$_POST['sub_details']);
+		$written_error=null;
+		$mcq_error=null;
+		$practical_error=null;
 		$written=isset($_POST['written'])?$_POST['written']:0;
 		$mcq=isset($_POST['mcq'])?$_POST['mcq']:0;
 		$practical=isset($_POST['practical'])?$_POST['practical']:0;
 		$attendance=isset($_POST['attendance'])?$_POST['attendance']:0;
+		
+		if($sub_details_arr[0]>0 && $written > $sub_details_arr[0]){
+			$written_error=1;
+		}
+		
+		else if ($sub_details_arr[1]>0 && $mcq> $sub_details_arr[1]){
+			$mcq_error=1;
+		}
+		
+		else if ($sub_details_arr[2]>0 && $practical> $sub_details_arr[2]){
+			$practical_error=1;
+		}
+		
+	  if($written_error==null && $mcq_error==null && $practical_error==null){	
 			
 		$score_update_model=ExamScore::model()->findByPk($mark_id);
 		$score_update_model->written=isset($written)?$written:0;
@@ -312,11 +331,18 @@ class SiteController extends Controller
 		if($score_update_model->save()){
 		echo CJSON::encode(array(
 				'status'=>'success',
+			
 		));
 		}
+	  }
+	  
 		else {
 			echo CJSON::encode(array(
 					'status'=>'failed',
+					'written_error'=>$written_error,
+					'mcq_error'=>$mcq_error,
+					'practical_error'=>$practical_error,
+					
 			));
 		}
 		exit;

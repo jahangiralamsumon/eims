@@ -123,7 +123,15 @@ $this->breadcrumbs=array(
 	</div>
 </div>
 </div>
-
+<style type="text/css">
+div.loading {
+background-image: url('<?php echo Yii::app()->baseUrl?>/images/ajax-loader.gif');
+background-position: center center;
+background-repeat: no-repeat;
+z-index:9999;
+height:50px;
+}
+</style>
 <?php $this->endWidget(); ?>
 
 
@@ -206,7 +214,7 @@ $this->breadcrumbs=array(
 						</td>
 						-->
 						<td>
-					
+					   <div id="loading_<?php echo $row->id?>"></div>
 						<?php //echo CHtml::activeTextArea($marks_input_model,'remark['.$key.']',array('class'=>'form-control','value'=>$row->remark)); ?>
 						
 						<?php 
@@ -245,9 +253,12 @@ $this->breadcrumbs=array(
 					'label'=>'Save',
 		)); ?>
 		
-		<?php 
+		<?php
+		$sub_details->written=$sub_details->written+0;
+		$sub_details->mcq=$sub_details->mcq+0;
+		$sub_details->practical=$sub_details->practical+0;
 		Yii::app()->clientScript->registerScript('mark_update', "
-		$('.mark-update-button').click(function(){
+		$('.mark-update-button').click(function(event){	
 		    event.preventDefault();
 			var url=$(this).attr('href') ;	
 			var arr=url.split('mark_id='); 	
@@ -268,17 +279,46 @@ $this->breadcrumbs=array(
 			if($('#attendance_' + mark_id).length != 0){
 			attendance=$('#attendance_' + mark_id).val();
 			}
-			
+			var sub_details =[". $sub_details->written .",".$sub_details->mcq. ",".$sub_details->practical."];
 			 $.ajax({
                           type: 'POST',
                           url: url,
-                          data: 'written=' + written +'& mcq='+ mcq +'& practical='+ practical +'& attendance='+ attendance,
+                          data: 'sub_details=' + sub_details + '& written=' + written +'& mcq='+ mcq +'& practical='+ practical +'& attendance='+ attendance,
 						  dataType: 'json',
-                          success: function(data) {
+            		      'beforeSend': function() {
+                                     $('#loading_'+ mark_id).empty();
+                       				 $('#loading_'+ mark_id).addClass('loading');
+							}, 
+                          success: function(data) {  
+            					$('#loading_'+ mark_id).removeClass('loading');
+        						if($('#written_' + mark_id).hasClass('error')){
+        						$('#written_' + mark_id).removeClass('error');
+								}
+        						if($('#mcq_' + mark_id).hasClass('error')){
+        						$('#mcq_' + mark_id).removeClass('error');
+								}
+        						if($('#practical_' + mark_id).hasClass('error')){
+        						$('#practical_' + mark_id).removeClass('error');
+								}
                             if (data.status == 'success'){
                                $('#row_'+ mark_id).addClass('info');
-					    		  // alert(data.status);
+        						
                             }
+        					else if (data.status == 'failed'){
+        		                $('#row_'+ mark_id).removeClass('info');	
+					    		if (data.written_error != null){		                  
+       							$('#written_' + mark_id).addClass('error');
+                                 }
+								else if (data.mcq_error != null){      		              	
+        							$('#mcq_' + mark_id).addClass('error');
+                                 }
+
+        						else if (data.practical_error != null){	
+        							$('#practical_' + mark_id).addClass('error');
+                                 } 
+        		
+                            }
+        		          
                           }
                         });
 		});
